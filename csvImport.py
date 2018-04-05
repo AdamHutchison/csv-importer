@@ -1,12 +1,9 @@
-import csv
-import pandas
-import pymysql
 from HelperMethods import Helper
-from CSVImporter import CSVimport
+from CSVParser import ParseCSV
 from DatabaseConnection import Database
 
 helper = Helper()
-csvImporter = CSVimport()
+csvImporter = ParseCSV()
 database = Database()
 
 csvPath = helper.inputField('\nPlease enter the path to the csv you wish to import >> ')
@@ -18,7 +15,9 @@ with open(csvPath, 'r') as csvfile:
 
     csvResponse = helper.inputField(
         '\nplease enter the columns [1-' + str(len(orderedColumnHeadings)) + '] you wish to select separated by a comma: >> ')
-    columnsToImport = csvResponse.split(',')
+    columnsToImport = list(map(int, csvResponse.split(',')))
+
+    columnData = csvImporter.getColumnData(orderedColumnHeadings)
 
     cols = csvImporter.getColumnsToimport(columnsToImport, orderedColumnHeadings)
 
@@ -26,23 +25,26 @@ with open(csvPath, 'r') as csvfile:
     for col in cols:
         helper.printOutput(col + ', ')
 
-checkColumnsAreCorrect = helper.inputField('\n Are these correct? (y/n) >> ')
-if checkColumnsAreCorrect == 'n':
-    helper.dieExit()
+    checkColumnsAreCorrect = helper.inputField('\n Are these correct? (y/n) >> ')
+    if checkColumnsAreCorrect == 'n':
+        helper.dieExit()
+
+    importColumnData = csvImporter.getImportData(cols)
+
 
 databaseCredentials = database.getDatabaseCredentials()
 
 for value in databaseCredentials:
     helper.printOutput(value + ':' + databaseCredentials[value])
 
-confirmation = helper.inputField('\nAre these details correct? (y/n) >> ')
+checkCredentialsAreCorrect = helper.inputField('\nAre these details correct? (y/n) >> ')
 
-if confirmation == 'Y':
-    db = pymysql.connect("localhost", inputs['User'], inputs['Password'], inputs['Database'])
-    cursor = db.cursor()
-    cursor.execute("SELECT * from orders")
-    data = cursor.fetchone()
-    helper.printOutput(data)
-    db.close()
-else:
+if checkCredentialsAreCorrect == 'n':
     helper.dieExit()
+
+db = database.connectToDatabase(databaseCredentials)
+cursor = db.cursor()
+cursor.execute("SELECT * from orders")
+data = cursor.fetchone()
+helper.printOutput(data)
+db.close()
