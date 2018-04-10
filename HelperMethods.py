@@ -15,4 +15,6 @@ class Helper(object):
         return print(Fore.LIGHTRED_EX + text + Style.RESET_ALL)
 
     def checkDetails(self):
-        return self.inputField('\n Are these correct? (y/n) >> ')
+        check = self.inputField('\n Are these correct? (y/n) >> ')
+        if check == 'n':
+            self.dieExit()
